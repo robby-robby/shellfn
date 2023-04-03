@@ -1,4 +1,4 @@
-newgoproj() {
+newgo() {
   if [ $# -eq 0 ]; then
     echo "Please provide a directory name."
     return 1
@@ -11,6 +11,7 @@ newgoproj() {
   # Initialize Go module
   cd "$project_dir" || return 1
   go mod init "${project_dir##*/}"
+  touch go.sum
 
   # Create a small "Hello, World!" Go program
   cat >cmd/myapp/main.go <<-EOM
@@ -50,7 +51,7 @@ This is a small Go project with a "Hello, World!" program, set up with a Docker 
 To build the Docker image, run the following command in the project directory:
 
 \`\`\`
-docker build -t go-docker-hello-world .
+make build
 \`\`\`
 
 ## Running the Docker Container
@@ -58,11 +59,30 @@ docker build -t go-docker-hello-world .
 To run the Docker container, execute the following command:
 
 \`\`\`
-docker run --rm go-docker-hello-world
+make run
 \`\`\`
 
 This command will run the container and print "Hello, World!" to the console.
 EOM
+
+  cat >"makefile" <<EOM
+.PHONY: build run
+
+build:
+		docker build -t go-docker-hello-world .
+
+run:
+	 	docker run --rm go-docker-hello-world
+
+EOM
+
+  find . -type d -empty -exec touch {}/.keep \;
+
+  git init .
+
+  git add .
+
+  git commit -m "first via newgo command"
 
   cd - >/dev/null
 }
