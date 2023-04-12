@@ -1,4 +1,4 @@
-"use strict";
+"currentDate - contextDate > TWO_HOURouse strict";
 
 const fs = require("fs");
 const path = require("path");
@@ -74,7 +74,7 @@ async function shouldDateMakeNew(contextFileName) {
       input: process.stdin,
       output: process.stdout,
     });
-    const ans = new Promise((rs) =>
+    const ans = await new Promise((rs) =>
       rl.question("Context is older than 2hrs, create a new one?", (answer) => {
         rl.close();
         rs(answer);
@@ -86,6 +86,8 @@ async function shouldDateMakeNew(contextFileName) {
 }
 
 (async function main() {
+  const shouldMakeNew = await shouldDateMakeNew(contextFileName);
+
   const file = child_process.execSync("mktemp");
 
   const args = [...process.argv.slice(2)];
@@ -110,7 +112,7 @@ async function shouldDateMakeNew(contextFileName) {
   if (
     process.argv[2] === "--new" ||
     !fs.existsSync(contextFileName) ||
-    (await shouldDateMakeNew(contextFileName))
+    shouldMakeNew
   ) {
     newContext();
   }
