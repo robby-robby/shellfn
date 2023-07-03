@@ -1,11 +1,11 @@
 newgo() {
   if [ $# -eq 0 ]; then
-    echo "Please provide a directory name."
+    echo "Please provide a project/directory name."
     return 1
   fi
 
   project_dir=$1
-  mkdir -p "$project_dir"/cmd/myapp "$project_dir"/pkg/{config,database,models,handlers,utils} "$project_dir"/internal/middleware
+  mkdir -p "$project_dir/cmd/${project_dir}" "$project_dir"/pkg/{config,database,models,handlers,utils} "$project_dir"/internal/middleware
   echo "Created Go project directory layout under: $project_dir"
 
   # Initialize Go module
@@ -14,7 +14,7 @@ newgo() {
   touch go.sum
 
   # Create a small "Hello, World!" Go program
-  cat >cmd/myapp/main.go <<-EOM
+  cat >"cmd/${project_dir}/main.go" <<-EOM
 package main
 
 import "fmt"
@@ -35,7 +35,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main ./cmd/myapp
+RUN go build -o main ./cmd/${project_dir}
 
 CMD ["./main"]
 EOM
@@ -69,10 +69,10 @@ EOM
 .PHONY: build run
 
 build:
-		docker build -t go-docker-hello-world .
+		docker build -t go-docker-${project_dir} .
 
 run:
-	 	docker run --rm go-docker-hello-world
+	 	docker run --rm go-docker-${project_dir}
 
 EOM
 
@@ -84,5 +84,5 @@ EOM
 
   git commit -m "first via newgo command"
 
-  cd - >/dev/null
+  #cd - >/dev/null
 }

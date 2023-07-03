@@ -121,5 +121,5 @@ function hey() {
 }
 
 function heyc() {
-  node /Users/robertpolana/etc/projects/shellfn/heyc.js $@
+  node $HOME/etc/projects/shellfn/heyc.js $@
 }
