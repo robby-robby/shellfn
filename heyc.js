@@ -27,7 +27,7 @@ async function fetchPrompt(messages) {
       Authorization: "Bearer " + process.env.OPENAI_API_KEY,
     },
     body: JSON.stringify({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages,
       temperature: 0.7,
     }),
@@ -42,9 +42,7 @@ async function smartTitle(ledger, maxChar = 32) {
     ...ledger,
     {
       role: "user",
-      content:
-        "give a title for the previous prompt with a maximum character count of " +
-        maxChar,
+      content: "give a title for the previous prompt with a maximum character count of " + maxChar,
     },
   ]);
   return title;
@@ -54,16 +52,13 @@ function slugify(str) {
   return str
     .slice(0, 128)
     .split("")
-    .map((char) =>
-      "abcdefghijklmnopqrstuvwxyz0123456789".includes(char.toLowerCase())
-        ? char
-        : "_"
-    )
+    .map((char) => ("abcdefghijklmnopqrstuvwxyz0123456789".includes(char.toLowerCase()) ? char : "_"))
     .join("");
 }
 
 async function shouldDateMakeNew(contextFileName) {
   const TWO_HOURS = 2 * 60 * 60 * 1000;
+  if (!fs.existsSync(contextFileName)) return true;
   const contextDate = fs.statSync(contextFileName).mtime.getTime();
   const currentDate = new Date().getTime();
   if (currentDate - contextDate > TWO_HOURS) {
@@ -84,6 +79,13 @@ async function shouldDateMakeNew(contextFileName) {
 }
 
 (async function main() {
+  if (process.argv[2] === "--recent") {
+    const {
+      info: { file },
+    } = JSON.parse(fs.readFileSync(contextFileName).toString());
+    process.stdout.write(fs.readFileSync(file).toString().trim());
+    return;
+  }
   const shouldMakeNew = await shouldDateMakeNew(contextFileName);
 
   const file = child_process.execSync("mktemp");
@@ -107,17 +109,11 @@ async function shouldDateMakeNew(contextFileName) {
     fs.writeFileSync(contextFileName, JSON.stringify(obj));
   }
 
-  if (
-    process.argv[2] === "--new" ||
-    !fs.existsSync(contextFileName) ||
-    shouldMakeNew
-  ) {
+  if (process.argv[2] === "--new" || !fs.existsSync(contextFileName) || shouldMakeNew) {
     newContext();
   }
 
-  const contextObj = JSON.parse(
-    fs.readFileSync(contextFileName).toString().trim()
-  );
+  const contextObj = JSON.parse(fs.readFileSync(contextFileName).toString().trim());
 
   let chatLedger = contextObj.context;
   let trimLedger = 0;
@@ -143,12 +139,8 @@ async function shouldDateMakeNew(contextFileName) {
       if (contextObj.info.smartTitle === undefined) {
         const title = await smartTitle(chatLedger);
         if (title) {
-          contextObj.info.smartTitle = title
-            .replace(/^"/, "")
-            .replace(/"$/, "");
-          contextObj.info.cleanSmartTitle = cleanPath(
-            contextObj.info.smartTitle
-          );
+          contextObj.info.smartTitle = title.replace(/^"/, "").replace(/"$/, "");
+          contextObj.info.cleanSmartTitle = cleanPath(contextObj.info.smartTitle);
           contextObj.info.file = contextObj.info.cleanSmartTitle;
         }
       }
@@ -160,16 +152,9 @@ async function shouldDateMakeNew(contextFileName) {
 
     fs.writeFileSync(
       contextObj.info.file,
-      (!!contextObj.info.smartTitle
-        ? "# " + contextObj.info.smartTitle + "\n\n"
-        : "") +
+      (!!contextObj.info.smartTitle ? "# " + contextObj.info.smartTitle + "\n\n" : "") +
         chatLedger
-          .map(
-            (m) =>
-              `### ${m.role.slice(0, 1).toUpperCase() + m.role.slice(1)}:\n${
-                m.content
-              }`
-          )
+          .map((m) => `### ${m.role.slice(0, 1).toUpperCase() + m.role.slice(1)}:\n${m.content}`)
           .join("\n\n------\n\n")
     );
   } else {

@@ -52,7 +52,7 @@ function __heyfn() {
         Authorization: "Bearer " + apikey,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: process.env.__MODEL,
         messages: [msgBody],
         temperature: 0.7,
       }),
@@ -87,7 +87,7 @@ EOF
       echo ""
     fi
 
-    __PRETEXT=${__PRETEXT} __TMPFILE=${__TMPFILE} node "${__JSTMP}"
+    __MODEL=${__MODEL} __PRETEXT=${__PRETEXT} __TMPFILE=${__TMPFILE} node "${__JSTMP}" | glow
 
   else
     echo "File is empty"
@@ -103,12 +103,21 @@ EOF
 function ___heycodeonly() {
   __CUSTOMPRETEXT="Without any extra text OR using code block highlighting, "
   __GPT_PROMPT=$@
+  __MODEL='gpt-3.5-turbo'
   __NOVIM=1
+  __heyfn
+}
+
+function heycode4() {
+  __CUSTOMPRETEXT=""
+  __MODEL='gpt-4'
+  __NOVIM=0
   __heyfn
 }
 
 function heycode() {
   __CUSTOMPRETEXT=""
+  __MODEL='gpt-3.5-turbo'
   __NOVIM=0
   __heyfn
 }
@@ -116,10 +125,19 @@ function heycode() {
 function hey() {
   __CUSTOMPRETEXT=""
   __GPT_PROMPT=$@
+  __MODEL='gpt-3.5-turbo'
+  __NOVIM=1
+  __heyfn
+}
+
+function hey4() {
+  __CUSTOMPRETEXT=""
+  __GPT_PROMPT=$@
+  __MODEL='gpt-4'
   __NOVIM=1
   __heyfn
 }
 
 function heyc() {
-  node $HOME/etc/projects/shellfn/heyc.js $@
+  node $HOME/etc/projects/shellfn/heyc.js $@ | tee glow
 }

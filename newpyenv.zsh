@@ -7,14 +7,27 @@ function newpyenv() {
   if [ $# -ne 0 ]; then
     DIR="${PWD}/$1"
   fi
-  mkdir -p $DIR
+  mkdir -p "$DIR"
+  # git init "$DIR"
   local ACT="${DIR}/bin/activate"
   local ENV_FILE="${DIR}/.env"
   echo "source ${ACT}" >"${ENV_FILE}"
+  cat <<EOF >"${DIR}/.gitignore"
+bin
+include
+lib
+pyvenv.cfg
+EOF
   autoenv_authorize_env "${ENV_FILE}"
   python3 -m venv $DIR
   while [[ ! -f ${ACT} ]]; do
     sleep 1 # Wait for 1 second before checking again
   done
-  source "${ACT}" && sleep 1 && cd $DIR
+  source "${ACT}" && 
+  sleep 1 && 
+  cd $DIR && 
+  mkdir -p src &&
+  git init . &&
+  git add . && 
+  git commit -m "newpyenv" &&
 }
