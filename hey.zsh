@@ -1,5 +1,5 @@
 function __heyfn() {
-  #
+  __JSTMP=$(mktemp)
   cat <<'EOF' >"${__JSTMP}"
   (async function main() {
     const fs = require("fs");
