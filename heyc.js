@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const child_process = require("child_process");
-
+const spawnSync = child_process.spawnSync;
 const DIR = path.join(process.env.HOME, ".prompts");
 if (!fs.existsSync(DIR)) fs.mkdirSync(DIR);
 const contextFileName = path.join(DIR, "context.lock");
@@ -19,32 +19,48 @@ function cleanPath(str) {
   return fp();
 }
 
-async function fetchPrompt(messages) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + process.env.OPENAI_API_KEY,
-    },
-    body: JSON.stringify({
-      model: "gpt-4",
-      messages,
-      temperature: 0.7,
-    }),
-  });
+const logResponse = (response) => {
+  if (process.env.HEYC_TMP_FILE) {
+    fs.writeFileSync(process.env.HEYC_TMP_FILE, response);
+  } else {
+    process.stdout.write(response);
+  }
+};
 
-  const json = await res.json();
-  return json.choices?.[0]?.message?.content || null;
+async function fetchPrompt(messages) {
+  let err = false;
+  try {
+    var res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + process.env.OPENAI_API_KEY,
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages,
+        temperature: 0.7,
+      }),
+    });
+
+    var text = await res.clone().text();
+    var json = await res.json();
+  } catch (e) {
+    err = true;
+  }
+  if (!json) err = true;
+  return [json.choices?.[0]?.message?.content || text, err];
 }
 
 async function smartTitle(ledger, maxChar = 32) {
-  const title = fetchPrompt([
+  const [title, err] = await fetchPrompt([
     ...ledger,
     {
       role: "user",
       content: "give a title for the previous prompt with a maximum character count of " + maxChar,
     },
   ]);
+  if (err) throw new Error(err);
   return title;
 }
 
@@ -80,10 +96,22 @@ async function shouldDateMakeNew(contextFileName) {
 
 (async function main() {
   if (process.argv[2] === "--recent") {
+    const num = !isNaN(parseInt(process.argv[3])) ? parseInt(process.argv[3]) : 0;
+    if (process.argv[3] || !fs.existsSync(contextFileName)) {
+      const f = child_process
+        .execSync("ls -lt $HOME/.prompts/*.md")
+        .toString()
+        .split("\n")
+        .filter(Boolean)
+        .map((f) => f.split(" ").slice(-1).join(""))[num];
+      if (!fs.existsSync(f)) return console.log("no file 🤷‍♂️");
+      logResponse(fs.readFileSync(f).toString().trim());
+      return;
+    }
     const {
       info: { file },
     } = JSON.parse(fs.readFileSync(contextFileName).toString());
-    process.stdout.write(fs.readFileSync(file).toString().trim());
+    logResponse(fs.readFileSync(file).toString().trim());
     return;
   }
   const shouldMakeNew = await shouldDateMakeNew(contextFileName);
@@ -94,7 +122,7 @@ async function shouldDateMakeNew(contextFileName) {
   if ((args[0] || "").startsWith("--")) args.shift();
   fs.writeFileSync(file, args.join(" "));
 
-  child_process.spawnSync(process.env.EDITOR || "vim", [file], {
+  spawnSync(process.env.EDITOR || "nvim", [file], {
     stdio: "inherit",
   });
 
@@ -128,12 +156,12 @@ async function shouldDateMakeNew(contextFileName) {
 
   process.stdout.write(String(pmpt) + "\n\n");
 
-  const response = await fetchPrompt(chatLedger.slice(trimLedger));
+  const [response, err] = await fetchPrompt(chatLedger.slice(trimLedger));
 
-  if (response) {
+  if (!err) {
     chatLedger.push({ role: "assistant", content: response });
 
-    process.stdout.write(response);
+    logResponse(response);
 
     try {
       if (contextObj.info.smartTitle === undefined) {
@@ -158,6 +186,6 @@ async function shouldDateMakeNew(contextFileName) {
           .join("\n\n------\n\n")
     );
   } else {
-    console.log(JSON.stringify(json, null, 4));
+    process.stdout.write(response);
   }
 })();

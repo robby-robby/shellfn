@@ -1,6 +1,5 @@
 function __heyfn() {
-
-  __JSTMP=$(mktemp)
+  #
   cat <<'EOF' >"${__JSTMP}"
   (async function main() {
     const fs = require("fs");
@@ -139,5 +138,7 @@ function hey4() {
 }
 
 function heyc() {
-  node $HOME/etc/projects/shellfn/heyc.js $@ | tee glow
+  export HEYC_TMP_FILE=$(mktemp) &&
+    node $HOME/etc/projects/shellfn/heyc.js $@ &&
+    cat $HEYC_TMP_FILE | glow
 }

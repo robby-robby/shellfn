@@ -2,3 +2,5 @@
 alias @@="source $HOME/.zshrc"
 alias npm=pnpm
 alias vlc='/Applications/VLC.app/Contents/MacOS/VLC'
+alias vim='nvim'
+alias c='code .'
