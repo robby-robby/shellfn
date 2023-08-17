@@ -121,13 +121,13 @@ function heycode() {
   __heyfn
 }
 
-function hey() {
-  __CUSTOMPRETEXT=""
-  __GPT_PROMPT=$@
-  __MODEL='gpt-3.5-turbo'
-  __NOVIM=1
-  __heyfn
-}
+# function hey() {
+#   __CUSTOMPRETEXT=""
+#   __GPT_PROMPT=$@
+#   __MODEL='gpt-3.5-turbo'
+#   __NOVIM=1
+#   __heyfn
+# }
 
 function hey4() {
   __CUSTOMPRETEXT=""
@@ -137,8 +137,9 @@ function hey4() {
   __heyfn
 }
 
-function heyc() {
-  export HEYC_TMP_FILE=$(mktemp) &&
-    node $HOME/etc/projects/shellfn/heyc.js $@ &&
-    cat $HEYC_TMP_FILE | glow
+function heyman() {
+  export HEY_OUT=$(mktemp)
+  python3 $HOME/etc/projects/hey/hey.py $@
+  cat $HEY_OUT | glow
+  HEY_OUT=""
 }

@@ -4,3 +4,6 @@ alias npm=pnpm
 alias vlc='/Applications/VLC.app/Contents/MacOS/VLC'
 alias vim='nvim'
 alias c='code .'
+alias @nvim='cd ~/.config/nvim/lua'
+alias tm='trash' #https://hasseg.org/trash/
+alias py='python3'
